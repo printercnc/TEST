@@ -27,7 +27,20 @@
 #define PIN_ENC_A PA0
 #define PIN_ENC_B PA1
 #define PIN_ENC_BTN PA2
+  
+  //khai báo biến toàn cục
+int currentPage = 1;       // Trang hiện tại (1: G54, 2: G55)
+const int maxPage = 2;
 
+const int btnPagePin = 7;  // Chân nút chuyển trang (thay 7 nếu chân khác)
+
+bool lastBtnState = HIGH;
+unsigned long lastDebounceTime = 0;
+const unsigned long debounceDelay = 50;
+
+// Giả sử bạn có biến lưu offset như sau (bạn kiểm tra lại tên biến trong code):
+float offsetG54X = 0, offsetG54Y = 0, offsetG54Z = 0;
+float offsetG55X = 0, offsetG55Y = 0, offsetG55Z = 0;
 // Bàn phím 4x4
 const uint8_t rowPins[4] = { PB0, PB1, PB2, PB3 };
 const uint8_t colPins[4] = { PB4, PB5, PB6, PB7 };
@@ -63,4 +76,4 @@ enum MenuStateEnum {
 MenuStateEnum currentMenu = MENU_STATUS;
 
 // Offset G54..G59 giả lập
-float g54_offset[undefined
+float g54_offsets[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; // G54 đến G59
