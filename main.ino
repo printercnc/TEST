@@ -27,20 +27,32 @@
 #define PIN_ENC_A PA0
 #define PIN_ENC_B PA1
 #define PIN_ENC_BTN PA2
-  
-  //khai báo biến toàn cục
-int currentPage = 1;       // Trang hiện tại (1: G54, 2: G55)
-const int maxPage = 2;
+
+// --- Giả định khai báo/macro đầu file ---
+#define EXTRUDERS 1        // Hoặc theo code bạn
+#define E_AXIS 4           // Vị trí trục E trong mảng offset (ví dụ 4 hoặc 5...)
+#define EXT_AXIS_START 3   // Trục mở rộng bắt đầu từ vị trí 3 (A trục 3, C trục 4,...)
+#define EXT_AXIS_MAX_COUNT 3
+char ext_axis_names[EXT_AXIS_MAX_COUNT] = {'A', 'C', 'D'}; // bạn thêm tên các trục mở rộng kèm E nếu cần
+int ext_axis_count = 2; // số trục mở rộng chưa E (A, C)
+
+#if defined(E_AXIS) && (EXTRUDERS > 0) && (E_AXIS >= 0)
+  #define HAS_E_AXIS 1
+#else
+  #define HAS_E_AXIS 0
+#endif
 
 const int btnPagePin = 7;  // Chân nút chuyển trang (thay 7 nếu chân khác)
+  
+// Biến vị trí các trục hiện tại Giả lập offset G54/G55
+float g54_offsets[6] = {10.123, 20.456, -5.789, 1.234, 2.345, 3.456};
+float g55_offsets[6] = {5.555, -10.666, 2.777, -1.888, 4.999, 0.001};
 
-bool lastBtnState = HIGH;
-unsigned long lastDebounceTime = 0;
-const unsigned long debounceDelay = 50;
+// Trang hiện tại, 1=G54, 2=G55
+int currentPage = 1;
+const int maxPage = 2;
 
-// Giả sử bạn có biến lưu offset như sau (bạn kiểm tra lại tên biến trong code):
-float offsetG54X = 0, offsetG54Y = 0, offsetG54Z = 0;
-float offsetG55X = 0, offsetG55Y = 0, offsetG55Z = 0;
+
 // Bàn phím 4x4
 const uint8_t rowPins[4] = { PB0, PB1, PB2, PB3 };
 const uint8_t colPins[4] = { PB4, PB5, PB6, PB7 };
@@ -48,8 +60,9 @@ const uint8_t colPins[4] = { PB4, PB5, PB6, PB7 };
 // Địa chỉ I2C của board chính (Marlin)
 #define SLAVE_ADDRESS 8
 
-// --- U8g2 khởi tạo
+// --- Khởi tạo màn hình U8G2 ---
 U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, PIN_CS, PIN_RST, PIN_SCK);
+
 
 // --- Variables ---
 volatile int encoderPos = 0;
@@ -59,21 +72,55 @@ int lastEncA = HIGH;
 int lastEncB = HIGH;
 int encoderButtonState = HIGH;
 
-unsigned long lastDebounceTime = 0;
-unsigned long debounceDelay = 50;
+// --- Hàm chuyển trang khi bấm nút, bạn cài đặt thêm ở nơi cần
+void checkPageButton() {
+  static bool lastBtnState = HIGH;
+  static unsigned long lastDebounceTime = 0;
+  const unsigned long debounceDelay = 50;
+
+  int reading = digitalRead(btnPagePin);
+  if (reading != lastBtnState) lastDebounceTime = millis();
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (reading == LOW && lastBtnState == HIGH) {
+      currentPage++;
+      if (currentPage > maxPage) currentPage = 1;
+      drawScreen();
+    }
+  }
+  lastBtnState = reading;
+}
+
 
 // Giá trị jog từng bước
 const int JOG_STEP = 1;  // mm hoặc đơn vị tương đương
 
-// Menu trạng thái
-enum MenuStateEnum {
-  MENU_STATUS,
-  MENU_G54_OFFSET,
-  MENU_SEND_GCODE,
-  MENU_COUNT
-};
+// --- Hàm vẽ màn hình theo trang ---
+void drawScreen() {
+  u8g2.clearBuffer();
+  u8g2.setFont(u8g2_font_6x12_tr);
 
-MenuStateEnum currentMenu = MENU_STATUS;
+  float* offsets = (currentPage == 1) ? g54_offsets : g55_offsets;
+  const char* title = (currentPage == 1) ? "Offset G54:" : "Offset G55:";
+  u8g2.drawStr(0, 12, title);
 
-// Offset G54..G59 giả lập
-float g54_offsets[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; // G54 đến G59
+  char buf[32];
+
+  // In trục X,Y,Z
+  snprintf(buf, sizeof(buf), "X:%7.3f Y:%7.3f Z:%7.3f", offsets[0], offsets[1], offsets[2]);
+ undefined
+  u8g2.drawStr(0, 24, buf);
+
+  // In trục A,C,D,E nếu có
+  if (HAS_E_AXIS) {
+    snprintf(buf, sizeof(buf), "E:%7.3f", offsets[E_AXIS]);
+    u8g2.drawStr(0, 36, buf);
+  }
+
+  for (int i = 0; i < ext_axis_count; i++) {
+    snprintf(buf, sizeof(buf), "%c:%7.3f", ext_axis_names[i], offsets[EXT_AXIS_START + i]);
+    u8g2.drawStr(0, 48 + i * 12, buf);
+  }
+
+  u8g2.sendBuffer();
+}
