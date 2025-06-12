@@ -17,6 +17,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <Wire.h>
+#include "encoder.h"
 
 // --- Phần cứng kết nối ---
 #define PIN_CS    PA4
@@ -43,9 +44,32 @@ int ext_axis_count = 2; // số trục mở rộng chưa E (A, C)
 #endif
 
 const int btnPagePin = 7;  // Chân nút chuyển trang (thay 7 nếu chân khác)
+#include "encoder.h"
+
 void setup() {
-  // Khởi tạo Serial (nếu cần debug)
   Serial.begin(115200);
+  HAL_Init();
+
+  Encoders_Init_All();
+}
+
+void loop() {
+  int32_t posX = Encoder_Read(&encoderX);
+  int32_t posY = Encoder_Read(&encoderY);
+  int32_t posZ = Encoder_Read(&encoderZ);
+  int32_t posA = Encoder_Read(&encoderA);
+  int32_t posC = Encoder_Read(&encoderC);
+  int32_t posE = Encoder_Read(&encoderE);
+
+  Serial.print("X:"); Serial.print(posX);
+  Serial.print(" Y:"); Serial.print(posY);
+  Serial.print(" Z:"); Serial.print(posZ);
+  Serial.print(" A:"); Serial.print(posA);
+  Serial.print(" C:"); Serial.print(posC);
+  Serial.print(" E:"); Serial.println(posE);
+
+  delay(100);
+}
 
   // Khởi tạo chân nút chuyển trang
   pinMode(btnPagePin, INPUT_PULLUP);
