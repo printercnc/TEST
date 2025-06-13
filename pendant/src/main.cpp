@@ -238,3 +238,9 @@ void drawScreen() {
 
   u8g2.sendBuffer();
 }
+
+void Error_Handler(void) {
+    while (1) {
+        // Thường có thể bật đèn báo lỗi hoặc debug ở đây
+    }
+}
