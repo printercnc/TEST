@@ -70,9 +70,3 @@ void Encoder_Init(Encoder_t *encoder, TIM_TypeDef *TIMx) {
         Error_Handler();
     }
 }
-
-void Error_Handler() {
-  while(1) {
-    // Optional: báo lỗi qua LED hoặc serial
-  }
-}
