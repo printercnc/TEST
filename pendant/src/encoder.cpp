@@ -1,10 +1,10 @@
 #include "encoder.h"
 #include "stm32f1xx_hal.h"
+#include "main.h" // nếu có khai báo My_Error_Handler
 
-// extern biến timer handler khai báo ở đâu đó (chẳng hạn main.c hoặc main.cpp)
-extern TIM_HandleTypeDef htim2;  // khai báo này phải khớp với file main
+extern void My_Error_Handler(void);
+extern TIM_HandleTypeDef htim2;  // Biến định nghĩa ở main.c hoặc main.cpp
 
-// biến encoder duy nhất trong bài demo
 Encoder_t encoderY = { .htim = {0}, .Instance = TIM2, .lastCount = 0, .totalCount = 0 };
 
 static void Encoder_GPIO_Config_TIM2(void) {
@@ -21,14 +21,22 @@ static void Encoder_GPIO_Config_TIM2(void) {
 }
 
 void Encoder_Init(Encoder_t *encoder, TIM_TypeDef *TIMx) {
+    // Kiểm tra tham số đầu vào hợp lệ
+    if (encoder == NULL || TIMx == NULL) {
+        My_Error_Handler();
+        return;
+    }
+
     encoder->Instance = TIMx;
+
     if (TIMx == TIM2) {
         Encoder_GPIO_Config_TIM2();
-        
-        encoder->htim = htim2;  // copy handler từ main tự tạo
+
+        // Copy handler timer từ main
+        encoder->htim = htim2;
     }
     else {
-        // Thêm nếu cần các timer khác
+        // Xử lý timer khác nếu cần
     }
 
     // Cấu hình timer Encoder mode
@@ -57,16 +65,15 @@ void Encoder_Init(Encoder_t *encoder, TIM_TypeDef *TIMx) {
 
     if (HAL_TIM_Encoder_Init(&encoder->htim, &sConfig) != HAL_OK) {
   // Xử lý lỗi đơn giản: return
-    return;
-   }
+       My_Error_Handler();
+        return;
+    }
 
-    if (HAL_TIMEx_MasterConfigSynchronization(&encoder->htim, &sMasterConfig) != HAL_OK) {
-    return;
-  } 
     sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
     sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
 
     if (HAL_TIMEx_MasterConfigSynchronization(&encoder->htim, &sMasterConfig) != HAL_OK) {
-        Error_Handler();
+        My_Error_Handler();
+        return;
     }
 }
