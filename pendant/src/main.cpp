@@ -19,6 +19,7 @@
 #include <Wire.h>
 #include "stm32f1xx_hal.h"
 #include "encoder.h"
+
 Encoder_t encoderY;
 // --- Hiển thị giao diện ---
 int currentPage = 1;
