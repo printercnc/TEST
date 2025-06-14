@@ -5,7 +5,12 @@
 extern void My_Error_Handler(void);
 extern TIM_HandleTypeDef htim2;  // Biến định nghĩa ở main.c hoặc main.cpp
 
-Encoder_t encoderY = { .htim = {0}, .Instance = TIM2, .lastCount = 0, .totalCount = 0 };
+Encoder_t encoderY = {
+    .htim = {0}, 
+    .Instance = TIM2,
+    .lastCount = 0,
+    .totalCount = 0
+};
 
 static void Encoder_GPIO_Config_TIM2(void) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};

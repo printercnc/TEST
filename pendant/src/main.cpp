@@ -17,10 +17,10 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <Wire.h>
+
 #include "stm32f1xx_hal.h"
 #include "encoder.h"
 
-Encoder_t encoderY;
 // --- Hiển thị giao diện ---
 int currentPage = 1;
 const int maxPage = 2;
@@ -115,14 +115,17 @@ char scanKeyboard() {
   return 0;
 }
 
+// Hàm prototype
+char scanKeyboard();
 void readEncoder();
 void drawScreen();
+void sendJogCommand(char axis, int32_t delta);
 
 void setupHardware() {
     Wire.begin();
     u8g2.begin();
 
-    // Khởi tạo encoder
+     // Khởi tạo encoder từ biến toàn cục encoderY trong encoder.cpp
     Encoder_Init(&encoderY, TIM2);
     HAL_TIM_Encoder_Start(&encoderY.htim, TIM_CHANNEL_ALL);
 
