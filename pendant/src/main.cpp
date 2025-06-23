@@ -6,7 +6,7 @@
 #include "stm32f1xx_hal.h"
 #include "encoder.h"
 #include "DisplayManager.h" 
-#include "ConnectionStatusDisplay.h"
+
 
 #define PIN_CLK PA5   // Clock (SCLK)
 #define PIN_DATA PA7  // Data (MOSI / SID)
