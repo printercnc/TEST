@@ -1,0 +1,59 @@
+#ifndef DISPLAYMANAGER_H
+#define DISPLAYMANAGER_H
+
+#include <U8g2lib.h>
+#include <string.h> // cho memcpy
+
+#define PARAM_COUNT 3
+#define AXIS_COUNT 6
+
+enum Page {
+  PAGE_G54 = 0,
+  PAGE_G55 = 1,
+  PAGE_PARAMETER = 2,
+  PAGE_COUNT = 3
+};
+
+struct Parameter {
+  const char* name;
+  float value;
+  float minVal;
+  float maxVal;
+  float step;
+};
+
+class DisplayManager {
+public:
+  DisplayManager(U8G2_ST7920_128X64_F_SW_SPI& display);
+
+  void drawOffsetsPage(const float offsets[AXIS_COUNT], const char* title);
+  void drawParameterPage(int selectedParamIdx);
+
+  // Update giá trị parameter
+  void setParameterValue(int index, float val);
+
+  // Lấy giá trị parameter
+  float getParameterValue(int index) const;
+
+  
+  // Thêm 2 hàm getter cho g54_offsets và g55_offsets
+  const float* getG54Offsets() const { return g54_offsets; }
+  const float* getG55Offsets() const { return g55_offsets; }
+
+
+private:
+  U8G2_ST7920_128X64_F_SW_SPI& u8g2;
+
+  float g54_offsets[AXIS_COUNT];
+  float g55_offsets[AXIS_COUNT];
+
+  const char axes[AXIS_COUNT] = {'X', 'Y', 'Z', 'A', 'C', 'E'};
+
+  Parameter params[PARAM_COUNT] = {
+    {"Step Spd", 5000, 1000, 10000, 100},
+    {"Accel", 1500, 100, 3000, 50},
+    {"Max Spd", 3000, 500, 5000, 100}
+  };
+};
+
+#endif
