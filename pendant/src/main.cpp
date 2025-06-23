@@ -12,6 +12,7 @@
 #define PIN_DATA PA7  // Data (MOSI / SID)
 #define PIN_CS PA4    // Chip Select
 #define PIN_RST -1   // Reset (hoặc dùng U8X8_PIN_NONE nếu không có chân reset)
+#define ENC_BTN_PIN PB6
 
 // encoder hardware timer handle (TIM2)
 extern TIM_HandleTypeDef htim2;
@@ -38,6 +39,10 @@ bool dataValid = false;
 
 unsigned long lastCheckConnMS = 0;
 const unsigned long checkConnInterval = 1000;
+
+static bool lastEncBtnState = HIGH;
+static unsigned long lastDebounceTime = 0;
+const unsigned long debounceDelay = 50;
 
 // Kiểm tra kết nối Marlin qua I2C
 bool checkMarlinConnection() {
@@ -113,19 +118,36 @@ void setupHardware() {
         pinMode(colPins[c], INPUT);
     for (int r = 0; r < 4; r++) 
         pinMode(rowPins[r], INPUT_PULLUP);
+        pinMode(ENC_BTN_PIN, INPUT_PULLUP);
     }
-    void setup() {
+void setup() {
   Wire.begin();
   setupHardware();
   u8g2.begin();
 }
 void loop() {
   unsigned long now = millis();
+  bool encBtnState = digitalRead(ENC_BTN_PIN);
 
   // Kiểm tra kết nối mỗi 1 giây
   if (now - lastCheckConnMS > checkConnInterval) {
     dataValid = checkMarlinConnection();
     lastCheckConnMS = now;
+  }
+  // Xử lý nút nhấn encoder khi chưa kết nối, để đổi trang
+    if (!dataValid) {
+        // debounce nút nhấn
+        if (encBtnState != lastEncBtnState) {
+            lastDebounceTime = now;
+        }
+
+        if ((now - lastDebounceTime) > debounceDelay) {
+            if (encBtnState == LOW && lastEncBtnState == HIGH) {
+                // nút vừa được nhấn xuống
+                currentPage = (currentPage + 1) % PAGE_COUNT;
+            }
+        }
+        lastEncBtnState = encBtnState;
   }
   // Nếu chưa kết nối, hiển thị trạng thái nhấp nháy
   if (!dataValid) {
