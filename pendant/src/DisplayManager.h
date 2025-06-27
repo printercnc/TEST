@@ -4,16 +4,13 @@
 #include <U8g2lib.h>
 #include <string.h> // cho memcpy
 
-#define PARAM_COUNT 3
-#define AXIS_COUNT 6
-
 enum Page {
-  PAGE_G54 = 0,
-  PAGE_G55 = 1,
-  PAGE_PARAMETER = 2,
-  PAGE_COUNT = 3
+  PAGE_WARNING ,
+  PAGE_G54 ,
+  PAGE_G55 ,
+  PAGE_PARAMETER ,
+  PAGE_COUNT ,
 };
-
 struct Parameter {
   const char* name;
   float value;
@@ -21,6 +18,9 @@ struct Parameter {
   float maxVal;
   float step;
 };
+
+#define PARAM_COUNT 3
+#define AXIS_COUNT 6
 
 class DisplayManager {
 public:
@@ -57,17 +57,16 @@ private:
 };
  class ConnectionStatusDisplay {
 public:
-    ConnectionStatusDisplay(U8G2_ST7920_128X64_F_SW_SPI& u8g2);
-
-    // Gọi trong loop, truyền trạng thái kết nối (true = có kết nối)
-    void update(bool connected);
+  ConnectionStatusDisplay(U8G2_ST7920_128X64_F_SW_SPI& u8g2);
+  void draw(bool connected);              // Thêm khai báo hàm draw
 
 private:
-    U8G2_ST7920_128X64_F_SW_SPI& u8g2_ref;
+  U8G2_ST7920_128X64_F_SW_SPI& u8g2_ref;
 
-    unsigned long lastToggleMS = 0;
-    bool visible = true;  // trạng thái hiển thị để tạo nhấp nháy
-    const unsigned long blinkInterval = 500; // 500ms nhấp nháy
+  unsigned long lastToggleMS = 0;
+  const unsigned long blinkInterval = 500;
+   bool visible = false;
+  
 };
 
 #endif
