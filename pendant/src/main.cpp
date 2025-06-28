@@ -6,6 +6,7 @@
 #include "stm32f1xx_hal.h"
 #include "encoder.h"
 #include "DisplayManager.h" 
+uint8_t currentPage = PAGE_WARNING;
 #include "EncoderButtonPageSwitcher.h"
 
 #define PIN_CLK PA5   // Clock (SCLK)
@@ -15,23 +16,20 @@
 #define ENC_BTN_PIN PB6
 #define PAGE_COUNT 4
 
-uint8_t currentPage = PAGE_WARNING;  
-
 EncoderButtonPageSwitcher pageSwitcher(ENC_BTN_PIN, PAGE_COUNT);
 // encoder hardware timer handle (TIM2)
 extern TIM_HandleTypeDef htim2;
 extern Encoder_t encoderY; // Biến encoder đã khai báo trong encoder.cpp
 
 // Khởi tạo chân nút chuyển trang
-const uint8_t rowPins[4] = {PB0, PB1, PB2, PB3};
-const uint8_t colPins[4] = {PB4, PB5, PA3, PA8};
+const uint8_t rowPins[4] = {PA0, PA1, PA2, PA3};
+const uint8_t colPins[4] = {PB0, PB1, PB2, PB3};
 
 #define SLAVE_ADDRESS 0x42 // Địa chỉ I2C của board chính (Marlin)
 
 U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, PIN_CLK, PIN_DATA, PIN_CS, PIN_RST);
 DisplayManager display(u8g2);
 ConnectionStatusDisplay connStatus(u8g2);
-
 
 char selectedAxis = 'X';
 int selectedAxisIndex = 0;
@@ -166,29 +164,52 @@ void loop() {
       pageSwitcher.resetPage(currentPage);
     }
   }
- int btnState = digitalRead(ENC_BTN_PIN);
+  int btnState = digitalRead(ENC_BTN_PIN);
+
+  // Xử lý debounce nút encoder, LƯU Ý: Thiếu kiểm tra trạng thái nhấn đã xong chưa
+  static bool buttonPressedHandled = false;
   if (btnState != lastButtonState) {
-  lastDebounceTime = millis();
-  lastButtonState = btnState;  // **Cập nhật ngay đây**
-}
-  if ((millis() - lastDebounceTime) > debounceDelay) {
-  if (btnState == LOW) {
-    // Xử lý nhấn nút ở đây
-    currentPage = (currentPage + 1) % PAGE_COUNT;
-    Serial.print("Page changed: ");
-    Serial.println(currentPage);
+    lastDebounceTime = now;
+    buttonPressedHandled = false; // reset khi trạng thái thay đổi
   }
-}
-else {
-    // Đã kết nối, chuyển trang qua phím '*' bàn phím 4x4
-    char key = scanKeyboard();
-    if (key == '*') {
+
+  if ((now - lastDebounceTime) > debounceDelay) {
+    if (btnState == LOW && !buttonPressedHandled) {
+      // Nhấn nút encoder xử lý chuyển trang
       currentPage = (currentPage + 1) % PAGE_COUNT;
-      Serial.print("Page changed by keyboard '*', currentPage = ");
+      Serial.print("Page changed: ");
       Serial.println(currentPage);
+      buttonPressedHandled = true;
     }
   }
-  // Xóa buffer trước khi vẽ
+  lastButtonState = btnState;
+
+  // Khi đã kết nối, xử lý bàn phím 4x4
+  if (dataValid) {
+    char key = scanKeyboard();
+    if (key != 0) {
+      switch (key) {
+        case '*':  // chuyển trang
+          currentPage = (currentPage + 1) % PAGE_COUNT;
+          Serial.print("Page changed by keyboard '*', currentPage = ");
+          Serial.println(currentPage);
+          break;
+
+        case '1': case 'X':  selectedAxis = 'X'; selectedAxisIndex=0; break;
+        case '2': case 'Y':  selectedAxis = 'Y'; selectedAxisIndex=1; break;
+        case '3': case 'Z':  selectedAxis = 'Z'; selectedAxisIndex=2; break;
+        case 'A':            selectedAxis = 'A'; selectedAxisIndex=3; break;
+        case 'C':            selectedAxis = 'C'; selectedAxisIndex=4; break;
+        case '#':            selectedAxis = 'E'; selectedAxisIndex=5; break;
+
+        case 'B':  // thay đổi cấp độ bước nhảy encoder
+          jogMultiplierIndex = (jogMultiplierIndex + 1) % (sizeof(jogMultipliers) / sizeof(int));
+          break;
+      }
+    }
+  }
+
+  // Vẽ màn hình
   u8g2.clearBuffer();
 
   if (!dataValid) {
@@ -240,30 +261,6 @@ else {
   // Gửi nội dung buffer ra màn hình
   u8g2.sendBuffer();
 
-  // Quét bàn phím và xử lý các phím
-  if (dataValid) {
-     char key = scanKeyboard();
-     if (key != 0) {
-        switch(key) {
-        case '*': // chuyển trang
-        currentPage = (currentPage + 1) % PAGE_COUNT;
-        Serial.print("Keyboard '*' pressed, currentPage = ");
-        Serial.println(currentPage);
-        break;
-
-      case '1': case 'X':  selectedAxis = 'X'; selectedAxisIndex=0; break;
-      case '2': case 'Y':  selectedAxis = 'Y'; selectedAxisIndex=1; break;
-      case '3': case 'Z':  selectedAxis = 'Z'; selectedAxisIndex=2; break;
-      case 'A':            selectedAxis = 'A'; selectedAxisIndex=3; break;
-      case 'C':            selectedAxis = 'C'; selectedAxisIndex=4; break;
-      case '#':            selectedAxis = 'E'; selectedAxisIndex=5; break;
-
-      case 'B': // thay đổi cấp độ bước nhảy encoder
-        jogMultiplierIndex = (jogMultiplierIndex + 1) % (sizeof(jogMultipliers) / sizeof(int));
-        break;
-    }
-  }
-  }
   // Đọc encoder 2 để gửi lệnh jog chỉ khi đã kết nối
   if (dataValid) {
     readEncoder();

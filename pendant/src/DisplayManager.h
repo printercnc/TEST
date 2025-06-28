@@ -5,11 +5,11 @@
 #include <string.h> // cho memcpy
 
 enum Page {
-  PAGE_WARNING ,
-  PAGE_G54 ,
-  PAGE_G55 ,
-  PAGE_PARAMETER ,
-  PAGE_COUNT ,
+  PAGE_WARNING = 0,
+  PAGE_G54 = 1,
+  PAGE_G55 = 2,
+  PAGE_PARAMETER = 3,
+  PAGE_COUNT = 4,
 };
 struct Parameter {
   const char* name;
