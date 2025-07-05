@@ -1,8 +1,8 @@
-// Header file for printer status and commands
+// printer_status.h
 
 #ifndef PRINTER_STATUS_H
 #define PRINTER_STATUS_H
-
+#pragma once
 #include <stdint.h>
 
 #define CMD_NONE    0x00
@@ -20,15 +20,17 @@ extern "C" {
 
 #pragma pack(push, 1)
 typedef struct {
-    float position[AXIS_COUNT];          // 6 float = 24 bytes
-    float hotend_temps[EXTRUDERS];       // 2 float = 8 bytes
-    float hotend_targets[EXTRUDERS];     // 2 float = 8 bytes
-    float bed_temp;                      // 1 float = 4 bytes
-    float bed_target;                    // 1 float = 4 bytes
-    uint8_t state;                      // 1 byte
-    uint32_t elapsed_seconds;           // 4 bytes
-    uint8_t feedrate_percentage;        // 1 byte
+    float position[AXIS_COUNT];          // 24 bytes
+    float hotend_temps[EXTRUDERS];       // 8 bytes
+    float hotend_targets[EXTRUDERS];     // 8 bytes
+    float bed_temp;                      // 4 bytes
+    float bed_target;                    // 4 bytes
+    uint8_t state;                       // 1 byte
+    uint32_t elapsed_seconds;            // 4 bytes
+    uint8_t feedrate_percentage;         // 1 byte
+    uint8_t reserved[6];                 // 6 bytes padding (tùy chỉnh để tổng thành 56 hoặc 64 bytes nếu cần)
 } PrinterStatus;
+
 /** 
  * Struct lệnh gửi từ STM32 -> Marlin 
  * Ví dụ lệnh Home, Pause, Resume, Stop, ...

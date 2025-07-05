@@ -154,10 +154,13 @@ void sendJogCommand(char axis, int32_t delta) {
 void sendHomeCommand(char axis) {
   char buf[32];
   if (axis == 'D') {
-    snprintf(buf, sizeof(buf), "G28\n"); // Home tất cả
-  } else {
-    snprintf(buf, sizeof(buf), "G28 %c\n", axis); // Home trục cụ thể
-  }
+  snprintf(buf, sizeof(buf), "G28\n");
+} else if (axis == 'X' || axis == 'Y' || axis == 'Z' || axis == 'E') {
+  snprintf(buf, sizeof(buf), "G28 %c\n", axis);
+} else {
+  // Không hợp lệ, bỏ qua
+  return;
+}
   Wire.beginTransmission(SLAVE_ADDRESS);
   Wire.write((uint8_t*)buf, strlen(buf));
   Wire.endTransmission();
