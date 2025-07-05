@@ -44,7 +44,11 @@ void jogAxis(uint8_t axis, float delta) {
 //------------------------------------------------------
 #include <U8g2lib.h>
 extern U8G2_ST7920_128X64_F_SW_SPI u8g2;  // hoặc extern biến được định nghĩa bên ngoài
-
+DisplayManager::DisplayManager(U8G2_ST7920_128X64_F_SW_SPI& display)
+    : u8g2(display)
+{
+    // (tùy ý: thêm gì cũng được)
+}
 void DisplayManager::drawStatusScreen(const PrinterStatus* status) {
     char buf[32];
     u8g2.clearBuffer();
