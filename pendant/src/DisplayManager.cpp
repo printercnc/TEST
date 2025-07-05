@@ -1,19 +1,64 @@
+// DisplayManager.cpp
+
 #include "DisplayManager.h"
 #include "Status.h"   // để truy cập printerStatus và EXTRUDERS
 #include <stdio.h>    // cho snprintf
+#include "printer_status.h"
+#include "PrinterI2C.h"
 
-extern bool homeDone;
+// STM32 HAL I2C dùng cho master
+#include "stm32f1xx_hal.h"
+extern I2C_HandleTypeDef hi2c1;
 
-DisplayManager::DisplayManager(U8G2_ST7920_128X64_F_SW_SPI& display)
-  : u8g2(display)
-{
-  // Khởi tạo giá trị giả lập offset G54 / G55
-  float g54_init[AXIS_COUNT] = {10.123f, 20.456f, -5.789f, 1.234f, 2.345f, 3.456f};
-  float g55_init[AXIS_COUNT] = {5.555f, -10.666f, 2.777f, -1.888f, 4.999f, 0.001f};
+#define MARLIN_I2C_ADDR 0x42 // 7-bit address
 
-  memcpy(g54_offsets, g54_init, sizeof(g54_offsets));
-  memcpy(g55_offsets, g55_init, sizeof(g55_offsets));
+// I2C Master Gửi LỆNH sang Marlin
+//------------------------------------------------------
+bool sendPrinterCommand(const PrinterCommand* cmd) {
+    HAL_StatusTypeDef ret = HAL_I2C_Master_Transmit(
+        &hi2c1,
+        MARLIN_I2C_ADDR << 1,               // STM32 dùng địa chỉ 8-bit
+        (uint8_t*)cmd, sizeof(PrinterCommand),
+        100
+    );
+    return (ret == HAL_OK);
 }
+//------------------------------------------------------
+// HÀM ĐIỀU KHIỂN
+//------------------------------------------------------
+void homeAllAxes() {
+    PrinterCommand cmd = {0};
+    cmd.command_id = 0x01; // Ví dụ lệnh home; điều chỉnh theo project bạn
+    memset(cmd.args, 0, sizeof(cmd.args));
+    sendPrinterCommand(&cmd);
+}
+
+void jogAxis(uint8_t axis, float delta) {
+    PrinterCommand cmd = {0};
+    cmd.command_id = 0x02; // Ví dụ lệnh jog
+    memcpy(cmd.args, &axis, 1); 
+    memcpy(cmd.args + 1, &delta, 4);
+    sendPrinterCommand(&cmd);
+}
+// VÍ DỤ Class DisplayManager (dùng U8G2)
+//------------------------------------------------------
+#include <U8g2lib.h>
+extern U8G2_ST7920_128X64_F_SW_SPI u8g2;  // hoặc extern biến được định nghĩa bên ngoài
+
+void DisplayManager::drawStatusScreen(const PrinterStatus* status) {
+    char buf[32];
+    u8g2.clearBuffer();
+    u8g2.setFont(u8g2_font_6x12_tr);
+
+    snprintf(buf, sizeof(buf), "State: %u", status->state);
+    u8g2.drawStr(0, 12, buf);
+
+    for (int i = 0; i < 3; i++) {
+        snprintf(buf, sizeof(buf), "%c: %.2f", 'X'+i, status->position[i]);
+        u8g2.drawStr(0, 24 + i * 12, buf);
+    }
+  }
+    // ... draw more info (temp, feedrate...) as needed
 
 void DisplayManager::drawOffsetsPage(const float offsets[AXIS_COUNT], const char* title) {
   

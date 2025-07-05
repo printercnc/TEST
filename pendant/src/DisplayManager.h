@@ -3,6 +3,7 @@
 
 #include <U8g2lib.h>
 #include <string.h> // cho memcpy
+#include "printer_status.h"
 
 enum Page {
   PAGE_WARNING = 0,
@@ -31,9 +32,9 @@ public:
   void drawOffsetsPage(const float offsets[AXIS_COUNT], const char* title);
   void drawParameterPage(int selectedParamIdx);
 
-  //void drawHomeStatusPage();
-
   void drawHomeStatusScreen();
+
+  void drawStatusScreen(const PrinterStatus* status);
 
   // Update giá trị parameter
   void setParameterValue(int index, float val);

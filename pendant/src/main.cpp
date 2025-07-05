@@ -6,6 +6,7 @@
 #include "stm32f1xx_hal.h"
 #include "encoder.h"
 #include "Status.h"
+#include "PrinterI2C.h"
 #include "DisplayManager.h" 
 uint8_t currentPage = PAGE_WARNING;
 

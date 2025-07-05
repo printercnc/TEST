@@ -1,3 +1,5 @@
+// Header file for printer status and commands
+
 #ifndef PRINTER_STATUS_H
 #define PRINTER_STATUS_H
 
@@ -18,23 +20,22 @@ extern "C" {
 
 #pragma pack(push, 1)
 typedef struct {
-    float position[AXIS_COUNT];          // Vị trí trục: X, Y, Z, A, C, E
-    float hotend_temps[EXTRUDERS];            // Nhiệt độ nozzle hiện tại cho mỗi extruder
-    float hotend_targets[EXTRUDERS];               // Nhiệt mục tiêu nozzle cho mỗi extruder
-    float bed_temp;                      // Nhiệt độ bàn hiện tại
-    float bed_target;                    // Nhiệt bàn mục tiêu
-    uint8_t state;                      // Trạng thái máy (ví dụ: 0=idle, 1=printing)
-    uint32_t elapsed_seconds;
-    uint8_t feedrate_percentage;           // Tỷ lệ cấp liệu (0-100%)
+    float position[AXIS_COUNT];          // 6 float = 24 bytes
+    float hotend_temps[EXTRUDERS];       // 2 float = 8 bytes
+    float hotend_targets[EXTRUDERS];     // 2 float = 8 bytes
+    float bed_temp;                      // 1 float = 4 bytes
+    float bed_target;                    // 1 float = 4 bytes
+    uint8_t state;                      // 1 byte
+    uint32_t elapsed_seconds;           // 4 bytes
+    uint8_t feedrate_percentage;        // 1 byte
 } PrinterStatus;
-
 /** 
  * Struct lệnh gửi từ STM32 -> Marlin 
  * Ví dụ lệnh Home, Pause, Resume, Stop, ...
  */
 typedef struct {
-    uint8_t command_id;                   // Mã lệnh, vd: 0=none,1=home,2=pause,...
-    uint8_t args[7];                     // Dữ liệu mở rộng / tham số nếu cần (padding)
+    uint8_t command_id;  // Loại lệnh, ví dụ CMD_HOME
+    uint8_t args[7];     // Dữ liệu mở rộng (padding tổng đủ 8 bytes cho dễ giao tiếp và căn hàng)
 } PrinterCommand;
 #pragma pack(pop)
 
